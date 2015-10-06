@@ -1,0 +1,71 @@
+# this is an example of a preseed with multiple LVMs on a single disk sda
+
+d-i partman-auto/method string lvm
+# regular
+d-i partman-auto-lvm/new_vg_name string vg_fast
+d-i partman-auto/disk string /dev/sda
+
+## creating vg_big  and vg_fast LVMs. Names are important, vg_big should be alphabetically higher than vg_fast, so you
+# can't use vg_root and vg_big instead.
+# One more issue: set size for vg_big in vg_fast section and vg_fast in vg_big section.
+# Partman tries to create one of VGs twice so we have to ignore the error:
+# d-i partman-auto-lvm/vg_create_error error
+# partman-base    partman/exception_handler       select
+# d-i debconf/priority select critical
+# d-i debconf/frontend select critical
+# partman-lvm partman-lvm/lvcreate_vgnames  select
+# d-i partman/exception_handler select Ignore
+# d-i partman/exception_handler select Continue
+# partman-base    partman/exception_handler   select  Continue
+# d-i partman/exception_handler seen false
+# d-i partman/exception_handler_note seen false
+# d-i partman/exception_handler unseen
+# d-i partman/exception_handler_note unseen
+# d-i partman-auto-lvm/vg_create_error error true
+# d-i partman/exception_handler select true
+# d-i debconf/button-continue text false
+d-i partman-auto/expert_recipe string                                      \
+      boot-root ::                                                         \
+      512 10 512 ext4                                                      \
+               $primary{ } $defaultignore{ } $bootable{ }               \
+               method{ format } format{ }                                  \
+               use_filesystem{ } filesystem{ ext4 }                        \
+               mountpoint{ /boot } label{ BOOT }                           \
+      .                                                                    \
+      1664 11000 196608 lvm                           \
+               $primary{ }                                                \
+               method{ lvm } device{ /dev/sda }                            \
+               vg_name{ vg_fast }                                          \
+      .                                                                    \
+      2048 100 -1 lvm                                                      \
+               $primary{ } $defaultignore{ }                             \
+               method{ lvm } device{ /dev/sda }                            \
+               vg_name{ vg_big }                                           \
+      .                                                                    \
+      64  100 6291456 ext4                                        \
+               $lvmok{ } method{ format } format{ }                       \
+               use_filesystem{ } lv_name{ es } in_vg{ vg_fast }            \
+               filesystem{ ext4 } mountpoint{ /var/lib/elasticsearch }     \
+      .                                                                    \
+      1024 10000 32768 ext4                                         \
+               $lvmok{ } method{ format } format{ }                       \
+               use_filesystem{ } lv_name{ root } in_vg{ vg_big }           \
+               filesystem{ ext4 } mountpoint{ / }                          \
+      .                                                                    \
+      512 10000 32768 ext4                                          \
+               $lvmok{ } method{ format } format{ }                       \
+               use_filesystem{ } lv_name{ var } in_vg{ vg_big }            \
+               filesystem{ ext4 } mountpoint{ /var }                       \
+      .                                                                    \
+      128 10000 32768 ext4                                          \
+                $lvmok{ } method{ format } format{ }                      \
+                use_filesystem{ } lv_name{ home } in_vg{ vg_big }          \
+                filesystem{ ext4 } mountpoint{ /home }                     \
+      .                                                                    \
+      64 10 -1 ext4                                                        \
+                $lvmok{ } lv_name{ deleteme }                             \
+                method{ lvm } in_vg{ vg_big }                              \
+      64 10 -1 ext4                                                        \
+                $lvmok{ } lv_name{ deleteme }                             \
+                method{ lvm } in_vg{ vg_fast }                             \
+      .

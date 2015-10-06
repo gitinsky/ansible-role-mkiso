@@ -1,0 +1,3 @@
+mkiso_iso_name: ubuntu-14.04.3-server-amd64
+mkiso_iso_dir: /vagrant
+mkiso_group: all

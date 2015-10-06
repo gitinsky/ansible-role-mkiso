@@ -1,0 +1,77 @@
+d-i partman-auto-lvm/guided_size string max
+
+#== start of raid specific setup. See example.preseed for alternative content of this section
+d-i partman-auto/disk string /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf
+d-i partman-auto/method string raid
+d-i partman-auto-lvm/new_vg_name string vg_big
+
+# https://wikitech.wikimedia.org/wiki/PartMan
+# {minumum size of partition in mb} {priority} {maximum size of partition in mb} {fs}
+#
+d-i partman-auto/expert_recipe string                                        \
+      raid-lvm ::                                                            \
+        512 10 512 raid                                                      \
+          $primary{ } $lvmignore{ } $bootable{ }                             \
+          method{ raid }                                                     \
+        .                                                                    \
+        1728 20 -1 raid                                                      \
+          $primary{ } $lvmignore{ }                                          \
+          method{ raid }                                                     \
+        .                                                                    \
+        1024 10000 {{ 1024*1024 }} ext4                                                \
+          $defaultignore $lvmok{ } lv_name{ root }                           \
+          method{ format } format{ }                                         \
+          use_filesystem{ } filesystem{ ext4 }                               \
+          mountpoint{ / }                                                    \
+        .                                                                    \
+        64 10 64 ext4                                                        \
+          $defaultignore $lvmok{ } lv_name{ deleteme }                       \
+          method{ lvm }                                                      \
+        .
+# <raidtype> <devcount> <sparecount> <fstype> <mountpoint>
+d-i partman-auto-raid/recipe string                                          \
+    1  5 0 ext4 /boot  /dev/sdb1#/dev/sdc1#/dev/sdd1#/dev/sde1#/dev/sdf1 .   \
+    10 5 1 lvm  -      /dev/sdb2#/dev/sdc2#/dev/sdd2#/dev/sde2#/dev/sdf2 .
+#=== end of raid specific setup
+
+
+# the 'deleteme' LV soaks up the leftover space in the VG
+# d-i preseed/late_command string in-target lvremove -f vg_big/deleteme
+# this step hangs. So delete lv in post script
+
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+
+# If one of the disks that are going to be automatically partitioned
+# contains an old LVM configuration, the user will normally receive a
+# warning. This can be preseeded away...
+d-i partman-lvm/device_remove_lvm boolean true
+# The same applies to pre-existing software RAID array:
+d-i partman-md/device_remove_md boolean true
+# And the same goes for the confirmation to write the lvm partitions.
+d-i partman-lvm/confirm boolean true
+d-i partman-lvm/confirm_nooverwrite boolean true #NOTE: This was missing in the example preseed
+d-i partman-auto/purge_lvm_from_device boolean true
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+d-i partman-lvm/confirm boolean true
+d-i partman-md/confirm boolean true
+d-i partman-md/confirm_nooverwrite boolean true
+d-i partman-lvm/confirm_nooverwrite boolean true
+
+d-i partman/mount_style select label
+
+d-i mdadm/boot_degraded boolean true
+
+# Hostname:
+netcfg	netcfg/get_hostname	string	{{ hostvars[item].host_presets.hostname }}
+# Domain name:
+{% if hostvars[item].host_presets.domain is defined %}
+netcfg	netcfg/get_domain	string	{{ hostvars[item].host_presets.domain }}
+{% endif %}
+
+# User setup
+# d-i passwd/user-fullname string Ubuntu User
+# d-i passwd/username string user
+# d-i passwd/user-password-crypted password {{ hostvars[item].host_presets.initial_settings.password }}
+d-i user-setup/allow-password-weak boolean true

@@ -1,0 +1,31 @@
+host_presets:
+  default_ipv4:
+    device: eth1
+  ansible_interfaces:
+    - eth0
+    - eth1
+  ansible_eth0:
+    proto: dhcp
+  ansible_eth1:
+    proto: static
+    address: 172.28.128.30
+    netmask: 255.255.255.0
+    gateway: 172.28.128.1
+    namesrv: 8.8.8.8
+  hostname: "vm1"
+  # domain: "vagrant"
+  ipmi:
+    address: 10.10.10.10
+  label: 'vm1, ip'
+  initial_settings:
+    username: ubuntu
+    password: ubuntu
+    extra_users:
+      - { user: hryamzik, key: 'ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA5/ldsgc9GwLIH+YtsJ9yHq4J+hUTxWvy8TEjv/VGErtpEaMkTclppBRXqn5gQ8vMyni52b8Qe0AwBu5ug8vdKACISvC7MqgvhjkIEbEacHJkcsPNOMVTQc1iwA7y7BAd4fzwNxUgi0hTAJ/xx6fqBsUAjFzbMqN2K7rPrI50vvxepnAezSLxz1WzhpjLin8EM8rSRPnqzwhqWjsn30++dLi/XocccacnSBPy38jE390vsWbqLiSXdy17Y3F0xuyA5SfH/5mEEvIpHA06Vv/MRoGttauatZIQLp2saw56dzmR5riET3GUO/ubkbyIsmxv7K+zlKsNOU7knigcIh7arQ== hryamzik@hryamziks-pb-4.local' }
+      - { user: vncadmin, nopass: yes }
+      - { user: vnca, nopass: no }
+    timezone:
+      zone: “Europe/Moscow”
+      utc: yes
+
+# hotspare

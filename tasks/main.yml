@@ -1,0 +1,66 @@
+- name: set facts
+  set_fact:
+    iso_hosts: "{{ groups[mkiso_group] }}"
+  tags: always
+
+- name: install requirements
+  apt: name=genisoimage
+
+- name: create mount point and  other dirs
+  file: dest={{ item }} state=directory
+  with_items:
+    - "/tmp/{{ mkiso_iso_name }}"
+    - "/opt/mkiso/{{ mkiso_iso_name }}"
+    - "{{ mkiso_iso_dir }}"
+
+- name: download original iso
+  get_url: url=http://releases.ubuntu.com/14.04/{{ mkiso_iso_name }}.iso
+           dest={{ mkiso_iso_dir }}/{{ mkiso_iso_name }}.iso
+           # checksum=md5:9e5fecc94b3925bededed0fdca1bd417
+
+- name: check if already mounted
+  shell: mount|grep "^{{ mkiso_iso_dir }}/ubuntu-14.04.3-server-amd64.iso\s"
+         creates=/opt/mkiso/{{ mkiso_iso_name }}/isolinux
+  failed_when: no
+  register: mounted
+  changed_when: mounted.rc != 0
+
+- name: mount iso
+  shell: mount -o loop {{ mkiso_iso_dir }}/{{ mkiso_iso_name }}.iso /tmp/{{ mkiso_iso_name }}
+         creates=/opt/mkiso/{{ mkiso_iso_name }}/isolinux
+  when: mounted.changed
+
+- name: copy files
+  shell: cp -rvT /tmp/{{ mkiso_iso_name }} /opt/mkiso/{{ mkiso_iso_name }}
+         creates=/opt/mkiso/{{ mkiso_iso_name }}/isolinux
+
+- name: put menu template
+  template: src=Ubuntu/isolinux/{{ item }} dest=/opt/mkiso/{{ mkiso_iso_name }}/isolinux/{{ item }}
+  with_items:
+    - lang
+    - txt.cfg
+
+- name: put cfg templates
+  template: src=Ubuntu/ks.cfg dest=/opt/mkiso/{{ mkiso_iso_name }}/ks_{{ hostvars[item].inventory_hostname }}.cfg
+  with_items: iso_hosts
+
+- name: put preseed templates
+  template: src=Ubuntu/ks.preseed dest=/opt/mkiso/{{ mkiso_iso_name }}/ks_{{ hostvars[item].inventory_hostname }}.preseed
+  with_items: iso_hosts
+
+# - name: set mkiso fact
+#   set_fact:
+#     mkiso: "{{ mkiso_group|combine(mkiso_host) }}"
+#   tags: ansible 2.0
+
+- debug: var=mkiso
+  tags: debug
+
+- debug: msg="{{ hostvars[item].host_presets.initial_settings.password|password_hash('md5_crypt') }}"
+  with_items: iso_hosts
+  tags: debug
+
+- name: create iso
+  shell: mkisofs -D -r -V "ATTENDLESS_UBUNTU" -cache-inodes -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -o {{ mkiso_iso_dir }}/auto.iso /opt/mkiso/ubuntu-14.04.3-server-amd64; printf '\a'; date
+
+# time mkisofs -D -r -V "ATTENDLESS_UBUNTU" -cache-inodes -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -o {{ mkiso_iso_dir }}/auto.iso /opt/mkiso/ubuntu-14.04.3-server-amd64; printf '\a'; date
