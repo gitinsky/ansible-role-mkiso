@@ -1,6 +1,6 @@
 # mksio role
 
-Role is designed to add preseed options to ISO images. These options are based on ansible inventory groups and variables. Set ```mkiso_group``` variable to the name of the target group. Ensure to set ```host_presets``` variable, use ```vagrant/host_vars/vm1.vagrant.yml``` as an example.
+Role is designed to add preseed options to ISO images. These options are based on ansible inventory groups and variables. Set ```mkiso_group``` variable to the name of the target group. Ensure to set ```host_presets``` variable, use [```vagrant/host_vars/vm1.vagrant.yml```](https://github.com/gitinsky/ansible-role-mkiso/blob/master/vagrant/host_vars/vm1.vagrant.yml) as an example.
 
 ## Warning!
 Role is currently in depelopment. Some major settings (like disk setup) are still hardcoded in the templates. It is tuned to set up raid 10 and lvm on 5 disks. Feel free to make pull requests with parametrized disk setup.
