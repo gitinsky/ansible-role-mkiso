@@ -48,6 +48,28 @@
   template: src=Ubuntu/ks.preseed dest=/opt/mkiso/{{ mkiso_iso_name }}/ks_{{ hostvars[item].inventory_hostname }}.preseed
   with_items: iso_hosts
 
+#=== debugging
+
+- debug: var=hostvars[iso_hosts[0]].host_presets.disks
+  when: debug is defined
+  tags: debug
+
+- name: create /tmp/mkiso/
+  local_action: file dest=/tmp/mkiso/ state=directory
+  sudo: no
+  when: debug is defined
+  tags: debug
+
+- name: put preseed templates
+  local_action: template src=Ubuntu/ks.preseed dest=/tmp/mkiso/ks_{{ hostvars[item].inventory_hostname }}.preseed
+  sudo: no
+  with_items: iso_hosts
+  when: debug is defined
+  tags: debug
+
+#== debugging
+
+
 # - name: set mkiso fact
 #   set_fact:
 #     mkiso: "{{ mkiso_group|combine(mkiso_host) }}"

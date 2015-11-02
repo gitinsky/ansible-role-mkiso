@@ -13,6 +13,16 @@ Role is currently in depelopment. Some major settings (like disk setup) are stil
 - ```combine``` filter is avaliable starting from ansible 2.0 so ```host_presets``` has to be fully declared on host or group basis. Merging is going to be implemented after ansible 2.0 release. In fact I'm going to declare 4 dictionaries: host_presets, host_presets_encrypted, group_presets, group_presets_encrypted.
 - On some systems ```sda``` disk is not avaliable during installation. That is caused by late driver loading and ```sdb``` has to be used as a first drive. ```ls``` still shows ```/dev/sda``` but ```cat``` and ```dd``` commands fail to operate with it and installation fails with ```sda``` errors.
 
+# Template debugging
+
+Run role with debug tag and varialbe:
+
+```bash
+ansible-playbook mkiso.yml -t debug -e debug=yes
+```
+
+And find you preseed files locally in /ymp/mkiso directory.
+
 # ISO testing
 
 See ```scripts``` for some virtual box automation scripts.
