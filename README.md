@@ -5,6 +5,30 @@ Role is designed to add preseed options to ISO images. These options are based o
 ## Warning!
 Role is currently in depelopment. Some major settings (like disk setup) are still hardcoded in the templates. It is tuned to set up raid 10 and lvm on 5 disks. Feel free to make pull requests with parametrized disk setup.
 
+# Variables
+
+When gpt is used (```host_presets.disks.gpt```), partisions should start from 2. Only primary partitions are currentrly supported.
+
+You only have to specify partitions for raid, like this:
+
+```yml
+host_presets:
+  disks:
+      gpt: no
+      raid:
+          - { type: 1,  spares: 0, fs: 'ext4', mount: '/boot', devices: ['sdb1', 'sdc1', 'sdd1', 'sde1', 'sdf1'] }
+          - { type: 10, spares: 0, fs: 'lvm',  mount: '-',     devices: ['sdb2', 'sdc2', 'sdd2', 'sde2', 'sdf2'] }
+# or
+  disks:
+    gpt: yes
+    raid:
+        - { type: 1, spares: 0, fs: 'ext4', mount: '/boot', devices: ['sda2', 'sdb2', 'sdc2'] }
+        - { type: 1, spares: 0, fs: 'lvm',  mount: '-',     devices: ['sdb3', 'sdc3'] }
+
+```
+
+Preseed file also requires a list of drives. It is generated automatically from the list of partitions by removing the tailing number with the help of the following regexp: ```regex_replace('\d+$','')```.
+
 # Known issues confirmed on ubuntu 14.04.3 server iso
 
 - Initial user setup doesn't work for some reason. We are fine due to valid ssh access and no-passwords user. Not sure if it's a configuration or installer issue.

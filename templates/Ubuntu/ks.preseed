@@ -1,37 +1,73 @@
+{% set tpl_gpt = true if hostvars[item].host_presets.disks.gpt is defined and hostvars[item].host_presets.disks.gpt else false %}
+{% set tpl_raid = hostvars[item].host_presets.disks.raid %}
+{% set disks=[] %}
+{% for raid in tpl_raid %}
+{% for part in raid.devices %}
+{% set dev = part|regex_replace('\d+$','') %}
+{% if dev not in disks %}
+{% if disks.append(dev) %}{% endif %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+# {{ ansible_managed }}
+
 d-i partman-auto-lvm/guided_size string max
 
 #== start of raid specific setup. See example.preseed for alternative content of this section
-d-i partman-auto/disk string /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf
+d-i partman-auto/disk string{% for disk in disks %} /dev/{{ disk }}{% endfor %}{{ '' }}
 d-i partman-auto/method string raid
 d-i partman-auto-lvm/new_vg_name string vg_big
 
+{% if tpl_gpt %}
+d-i partman-basicfilesystems/choose_label string gpt
+d-i partman-basicfilesystems/default_label string gpt
+d-i partman-partitioning/choose_label string gpt
+d-i partman-partitioning/default_label string gpt
+d-i partman/choose_label string gpt
+d-i partman/default_label string gpt
+
+{% endif %}
 # https://wikitech.wikimedia.org/wiki/PartMan
 # {minumum size of partition in mb} {priority} {maximum size of partition in mb} {fs}
 #
-d-i partman-auto/expert_recipe string                                        \
-      raid-lvm ::                                                            \
-        512 10 512 raid                                                      \
-          $primary{ } $lvmignore{ } $bootable{ }                             \
-          method{ raid }                                                     \
-        .                                                                    \
-        1728 20 -1 raid                                                      \
-          $primary{ } $lvmignore{ }                                          \
-          method{ raid }                                                     \
-        .                                                                    \
-        1024 10000 {{ 1024*1024 }} ext4                                                \
-          $defaultignore $lvmok{ } lv_name{ root }                           \
-          method{ format } format{ }                                         \
-          use_filesystem{ } filesystem{ ext4 }                               \
-          mountpoint{ / }                                                    \
-        .                                                                    \
-        64 10 64 ext4                                                        \
-          $defaultignore $lvmok{ } lv_name{ deleteme }                       \
-          method{ lvm }                                                      \
+d-i partman-auto/expert_recipe string \
+      raid-lvm ::                     \
+{% if tpl_gpt %}
+        1 1 1 free            \
+          $gptonly{ }         \
+          $primary{ }         \
+          $bios_boot{ }       \
+          method{ biosgrub }  \
+              .               \
+{% endif %}
+        512 10 512 raid \
+          {% if tpl_gpt %}$gptonly{ } {% endif %}$primary{ } $lvmignore{ } $bootable{ } \
+          method{ raid } \
+        . \
+        1728 20 -1 raid \
+          {% if tpl_gpt %}$gptonly{ } {% endif %}$primary{ } $lvmignore{ } \
+          method{ raid } \
+        . \
+        1024 10000 {{ 1024*1024 }} ext4 \
+          $defaultignore $lvmok{ } lv_name{ root } \
+          method{ format } format{ } \
+          use_filesystem{ } filesystem{ ext4 } \
+          mountpoint{ / } \
+        . \
+        64 10 64 ext4 \
+          $defaultignore $lvmok{ } lv_name{ deleteme } \
+          method{ lvm } \
         .
 # <raidtype> <devcount> <sparecount> <fstype> <mountpoint>
-d-i partman-auto-raid/recipe string                                          \
-    1  5 0 ext4 /boot  /dev/sdb1#/dev/sdc1#/dev/sdd1#/dev/sde1#/dev/sdf1 .   \
-    10 5 1 lvm  -      /dev/sdb2#/dev/sdc2#/dev/sdd2#/dev/sde2#/dev/sdf2 .
+d-i partman-auto-raid/recipe string \
+{% for raid in tpl_raid %}
+    {{ raid.type }} {{ raid.devices|length }} {{ raid.spares }} {{ raid.fs }} {{ raid.mount }} {{ ' ' }}
+{%- for dev in raid.devices %}/dev/{{ dev }}
+{%- if loop.index < raid.devices|length %}#{% endif %}
+{% endfor %} .
+{%- if loop.index < tpl_raid|length %} \{% endif %}
+
+{% endfor %}
 #=== end of raid specific setup
 
 
