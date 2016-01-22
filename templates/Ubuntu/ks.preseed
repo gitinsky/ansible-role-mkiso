@@ -99,6 +99,11 @@ d-i partman/mount_style select label
 
 d-i mdadm/boot_degraded boolean true
 
+# The installer has detected that the following disks have mounted partitions
+# http://ubuntuforums.org/showthread.php?t=2215103
+d-i partman/unmount_active boolean true
+d-i preseed/early_command string umount /media
+
 # Hostname:
 netcfg	netcfg/get_hostname	string	{{ hostvars[item].host_presets.hostname }}
 # Domain name:
