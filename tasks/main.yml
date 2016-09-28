@@ -14,12 +14,12 @@
     - "{{ mkiso_iso_dir }}"
 
 - name: download original iso
-  get_url: url=http://releases.ubuntu.com/14.04/{{ mkiso_iso_name }}.iso
+  get_url: url=http://releases.ubuntu.com/{{ mkiso_iso_version }}/{{ mkiso_iso_name }}.iso
            dest={{ mkiso_iso_dir }}/{{ mkiso_iso_name }}.iso
            # checksum=md5:9e5fecc94b3925bededed0fdca1bd417
 
 - name: check if already mounted
-  shell: mount|grep "^{{ mkiso_iso_dir }}/ubuntu-14.04.3-server-amd64.iso\s"
+  shell: mount|grep "^{{ mkiso_iso_dir }}/{{ mkiso_iso_name }}.iso\s"
          creates=/opt/mkiso/{{ mkiso_iso_name }}/isolinux
   failed_when: no
   register: mounted
@@ -83,6 +83,6 @@
   tags: debug
 
 - name: create iso
-  shell: mkisofs -D -r -V "ATTENDLESS_UBUNTU" -cache-inodes -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -o {{ mkiso_iso_dir }}/auto.iso /opt/mkiso/ubuntu-14.04.3-server-amd64; printf '\a'; date
+  shell: mkisofs -D -r -V "ATTENDLESS_UBUNTU" -cache-inodes -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -o {{ mkiso_iso_dir }}/auto.iso /opt/mkiso/{{ mkiso_iso_name }}; printf '\a'; date
 
 # time mkisofs -D -r -V "ATTENDLESS_UBUNTU" -cache-inodes -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -o {{ mkiso_iso_dir }}/auto.iso /opt/mkiso/ubuntu-14.04.3-server-amd64; printf '\a'; date
