@@ -56,13 +56,13 @@
 
 - name: create /tmp/mkiso/
   local_action: file dest=/tmp/mkiso/ state=directory
-  sudo: no
+  become: no
   when: debug is defined
   tags: debug
 
 - name: put preseed templates
   local_action: template src=Ubuntu/ks.preseed dest=/tmp/mkiso/ks_{{ hostvars[item].inventory_hostname }}.preseed
-  sudo: no
+  become: no
   with_items: iso_hosts
   when: debug is defined
   tags: debug
